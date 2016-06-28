@@ -1,0 +1,131 @@
+<html>
+  <head>
+    <!-- jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    
+    <!-- jQuery UI -->
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+    
+    <!-- three.js -->
+    <script src="lib/three.js/three.min.js"></script>
+    <script src="lib/three.js/js/loaders/ColladaLoader.js"></script>    
+    <script src="lib/three.js/js/controls/TrackballControls.js"></script>
+    
+    <!--jquery.knob -->
+    <script src="lib/jquery.knob.min.js"></script>
+    
+    <!-- Project code -->
+    <script src="hexapod_browser.js"></script>
+    
+    <!--Styles -->
+    <style>
+      .m {
+        display: inline-block;
+        width: 1.6em;
+        vertical-align: top;
+        text-align: center;
+        background-color: #616b98;
+        color: #ffffff;
+        font-size: x-small;
+      }
+      .sep1 {
+        display: inline-block;
+        width: 36px;
+      }
+      
+      .spaceTop {
+        margin-top: 20px;
+      }
+      
+      .border {
+        border: 1px solid #d9d9d9;
+      }
+      
+      .marginLR {
+        margin-left: 5px;
+        margin-right: 5px;
+      }
+
+      .isSortable li {
+        border: 1px solid;
+        padding: 6px;
+        margin-top: 3px;
+        margin-bottom: 3px;
+        background-color: #f0f0f5;
+      }
+      
+      .exportStates {
+        width: 100%;
+        height: 300px;
+        flex-grow: 1;
+        font-family: monospace;
+      }
+      
+    </style>
+  </head>
+  <body>
+    <h1>Hexapod Configurator</h1>
+    
+    <div style="display: flex; flex-direction: row; align-items: center;">
+      <!-- Knobs panel -->
+      <div style="margin-right: 8px; height: 400px; display: flex; flex-direction: column; justify-content: center;" class="border">
+        <div class="marginLR">
+          <span class="m">2</span><input id="servo2" value="90">
+          <span class="m">1</span><input id="servo1" value="90">
+          <span class="sep1"></span>
+          <input id="servo7" value="90"><span class="m">7</span>
+          <input id="servo8" value="90"><span class="m">8</span>
+        </div>
+        <div class="spaceTop marginLR">
+          <span class="m">4</span><input id="servo4" value="90">
+          <span class="m">3</span><input id="servo3" value="90">
+          <span class="sep1"></span>          
+          <input id="servo9" value="90"><span class="m">9</span>
+          <input id="servo10" value="90"><span class="m">10</span>
+        </div>
+        <div class="spaceTop marginLR">
+          <span class="m">6</span><input id="servo6" value="90">
+          <span class="m">5</span><input id="servo5" value="90">       
+          <span class="sep1"></span>          
+          <input id="servo11" value="90"><span class="m">11</span>
+          <input id="servo12" value="90"><span class="m">12</span>
+        </div>  
+      </div> 
+      <!-- 3D scene -->
+      <div id="scene" style="width: 400px; height: 400px;" class="border"></div>
+    </div>
+
+    <!-- Button area -->
+    <div class="border" style="margin-top: 5px;">
+      <div style="margin: 8px;">
+      <button id="wsReconnect">Reconnect</button>
+      <button id="resetButton">Reset</button>
+      <button id="statesButton">States</button>
+      </div>
+    </div>
+    
+<!-- Dialog: Show state -->
+    <div id="stateDialog">
+      <ul id="statesList" class="isSortable" style="list-style-type: none; padding: 0px;">
+      </ul>
+      <textarea id="stateTextArea" style="width: 100%; height: 5em;"></textarea>
+    </div>
+
+<!-- Dialog: stateNameDialog -->
+    <div id="stateNameDialog">
+      <label for="stateNameText">Name:</label>
+      <input id="stateNameText" type="text">
+    </div>
+
+<!-- Dialog: exportStatesDialog -->
+    <div id="exportStatesDialog">
+      <div style="display: flex; flex-direction: column; height: 100%;">
+        <p>The following is the JSON representation of all the states that we have built.  Copy and paste this into your
+        application or data file.</p>
+        <textarea id="exportStatesTextArea" class="exportStates"></textarea>
+      </div>
+    </div>
+    
+  </body>
+</html>
