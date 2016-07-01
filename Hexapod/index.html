@@ -59,7 +59,25 @@
         width: 100%;
         height: 300px;
         flex-grow: 1;
-        font-family: monospace;
+        font-family: monospace !important;
+      }
+      
+      #stateDialog textarea {
+      	width: 100%;
+      	height: 5em;
+      	font-family: monospace !important;
+      }
+      
+      #stateDialog ul {
+      	max-height: 300px;
+      	overflow: auto;
+      	list-style-type: none;
+      	padding: 0px;
+      	font-size: small;
+      }
+      
+      textarea {
+      	resize: none;
       }
       
     </style>
@@ -97,19 +115,25 @@
     </div>
 
     <!-- Button area -->
-    <div class="border" style="margin-top: 5px;">
+    <div style="margin-top: 5px;">
       <div style="margin: 8px;">
       <button id="wsReconnect">Reconnect</button>
       <button id="resetButton">Reset</button>
       <button id="statesButton">States</button>
+      <button id="sendButton">Send</button>
+      <button id="walkButton">Walk</button>
+      <button id="stopButton">Stop</button>
+      <button id="propertiesButton">Properties</button>     
       </div>
     </div>
     
 <!-- Dialog: Show state -->
     <div id="stateDialog">
-      <ul id="statesList" class="isSortable" style="list-style-type: none; padding: 0px;">
-      </ul>
-      <textarea id="stateTextArea" style="width: 100%; height: 5em;"></textarea>
+      <p>Saved states:</p>
+      <ul id="statesList" class="isSortable"></ul>
+      <hr />
+      <p>Current state data:</p>
+      <textarea id="stateTextArea"></textarea>
     </div>
 
 <!-- Dialog: stateNameDialog -->

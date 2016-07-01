@@ -8,6 +8,24 @@
 "use strict";
 const assert = require("assert");
 
+/**
+ * Messages that can be received over the Web Socket are:
+ * {
+ *   type: <Command Type>
+ *   data: <data>
+ * }
+ * 
+ * The following command types are:
+ * type: "state"
+ * data: {
+ *   name: <Name of state>
+ *   angles: [array of angles]
+ * }
+ * 
+ * type: "walk"
+ * 
+ * type: "stop"
+ */
 // 0   = forward facing/down
 // 180 = backward facing/up
 
@@ -16,20 +34,36 @@ const assert = require("assert");
 // invert - Should the angle be inverted 0->180 and 180->0
 // servoId
 const servoInits = [
-  {id:  0, min: 700, max: 2600, invert: false },
-  {id:  1, min: 700, max: 2600, invert: false },
-  {id:  2, min: 700, max: 2600, invert: false },
-  {id:  3, min: 700, max: 2600, invert: true },      
-  {id:  4, min: 700, max: 2600, invert: false },
-  {id:  5, min: 700, max: 2600, invert: true },
-  {id:  6, min: 700, max: 2600, invert: true },
-  {id:  7, min: 700, max: 2600, invert: true },  
-  {id:  8, min: 700, max: 2600, invert: true },   
-  {id:  9, min: 700, max: 2600, invert: false },
-  {id: 10, min: 700, max: 2600, invert: true },
-  {id: 11, min: 700, max: 2600, invert: false }    
+                    // default is 700-2600 ... 1900 difference
+  {id:  0, min: 650, max: 2550, invert: false }, // Servo 1
+  {id:  1, min: 700, max: 2600, invert: false }, // Servo 2
+  {id:  2, min: 550, max: 2450, invert: false }, // Servo 3
+  {id:  3, min: 700, max: 2600, invert: true  }, // Servo 4 
+  {id:  4, min: 700, max: 2600, invert: false }, // Servo 5
+  {id:  5, min: 700, max: 2600, invert: true  }, // Servo 6
+  {id:  6, min: 700, max: 2600, invert: true  }, // Servo 7
+  {id:  7, min: 500, max: 2400, invert: true  }, // Servo 8  
+  {id:  8, min: 700, max: 2600, invert: true  }, // Servo 9   
+  {id:  9, min: 800, max: 2700, invert: false }, // Servo 10
+  {id: 10, min: 700, max: 2600, invert: true  }, // Servo 11
+  {id: 11, min: 700, max: 2600, invert: false }  // Servo 12    
 ];
+
+const walkState = {
+  walkStates: [{"name":"Base","angles":[90,0,90,0,90,0,90,0,90,0,90,0]},{"name":"Step 1","angles":[90,0,90,60,90,0,90,60,90,0,90,60]},{"name":"Step 2","angles":[90,0,60,60,90,0,60,60,90,0,60,60]},{"name":"Step 3","angles":[90,0,60,0,90,0,60,0,90,0,60,0]},{"name":"Step 4","angles":[90,60,60,0,90,60,60,0,90,60,60,0]},{"name":"Step 5","angles":[90,60,90,0,90,60,90,0,90,60,90,0]},{"name":"Step 6","angles":[60,60,90,0,60,60,90,0,60,60,90,0]},{"name":"Step 7","angles":[60,0,90,0,60,0,90,0,60,0,90,0]},{"name":"Step 8","angles":[60,0,90,60,60,0,90,60,60,0,90,60]},
+                    {"name": "end"}],
+  index:0,
+  walkTimerId: null
+};
+
 const MAX_SERVOS = 12;
+
+
+
+/**
+ * An array of Servo objects, one for each of the possible servos
+ * that can be controlled.
+ */
 var servos = [];
 
 //
@@ -39,10 +73,10 @@ class Servo {
 
   
   constructor(id, min, max, invert) {
-    if (id < 0 || id > 15) {
+    if (id < 0 || id >= MAX_SERVOS) {
       console.log("Error: id out of range, supplied was %d", id);
     }
-    this.id = id;
+    this.id  = id;
     this.min = min;
     this.max = max;
     this.invert = invert;
@@ -78,9 +112,9 @@ class Servo {
 }; // End of class Servo
 
 
-//
-// init
-//
+/**
+ * Initialize the PWM controller.
+ */
 function init() {
   // Sanity checks
   assert(MAX_SERVOS == servoInits.length, "Mismatch in number of servos and number of servo inits");
@@ -92,7 +126,7 @@ function init() {
       "i2c":        i2cBus.openSync(1),
       "address":    0x40,
       "frequency":  50,
-      "debug":      true
+      "debug":      false
   };
   
   let driver = new Pca9685Driver(options, ()=>{
@@ -109,9 +143,17 @@ function init() {
 } // End of init
 
 
+/**
+ * Set the specific servo to the desired angle.
+ * @function
+ * @param id The id of the servo.  A value between 0 and MAX_SERVOS-1.
+ * @param angle The angle to set the servo.
+ */
 function setServo(id, angle) {
+  assert(id >=0 && id < MAX_SERVOS);
+  assert(angle >= 0 && angle <=180);
   servos[id].angle = angle;
-};
+}; // End of serServo
 
 
 
@@ -124,17 +166,66 @@ wss.on("connection", (ws)=> {
   console.log("Received a new ws connection");
   ws.on("message", function(message) {
     console.log("Received a new message: %s", message);
-    let command = JSON.parse(message);
-    debugger;
-    setServo(command.servoId, command.value);
+    processCommand(JSON.parse(message));
   });
 });
+
 server.listen(3000, ()=> {
   console.log("Server listening on port 3000");
 });
+
+
+/**
+ * Process a command received over the Web Socket.
+ * @param command The command to be processed.  The types supported are:
+ * <ul>
+ * <li>state - receive a complete set of servo states</li>
+ * </ul>
+ */
+function processCommand(command) {
+  switch(command.type) {
+  case "state":
+    assert(command.data.angles.length == MAX_SERVOS);
+    for (let servoId=0; servoId<MAX_SERVOS; servoId++) {
+      setServo(servoId, command.data.angles[servoId]);
+    }
+    break;
+
+  case "walk":
+    if (walkState.timerId != null) {
+      clearInterval(walkState.timerId);
+    }
+    walkState.index = 0;
+    walkState.timerId = setInterval(walk, 200);
+    break;
+
+  case "stop":
+    if (walkState.timerId != null) {
+      clearInterval(walkState.timerId);
+      walkState.timerId = null;
+    }
+    break;
+
+  default:
+    console.log("Unknown command type: %s", command.type);
+    break;
+  }
+} // End of processCommand
 
 
 setTimeout(()=> {
   console.log("Time out!");
 }, 1000*60*60);
 
+
+function walk() {
+  if (walkState.walkStates[walkState.index].name == "end") {
+    walkState.index = 1;
+  }
+  
+  console.log("***********\nWalking state: %d", walkState.index);
+  for (let servoId=0; servoId<MAX_SERVOS; servoId++) {
+    setServo(servoId, walkState.walkStates[walkState.index].angles[servoId])
+  }
+  walkState.index++;
+}
